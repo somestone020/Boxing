@@ -33,6 +33,8 @@ public class InitSceen : MonoBehaviour
         if (currentValue >= 0.9)
         {
             LoadScene(loadSceneName);
+
+
         }
     }
 
