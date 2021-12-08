@@ -53,10 +53,6 @@ public class InputManager : MonoBehaviour {
 		//use joypad
 		if (inputType == INPUTTYPE.JOYPAD) JoyPadControls();
 
-		if (Application.platform == RuntimePlatform.Android && Input.GetKeyDown(KeyCode.Escape)) // 返回键
-		{
-			GameObject.FindObjectOfType<UIManager>().ShowMenu("MainMenu");
-		}
 		if (Input.GetKeyDown(KeyCode.Escape)) // 返回键
 		{
 			GameObject.FindObjectOfType<UIManager>().ShowMenu("MainMenu");

@@ -25,15 +25,19 @@ public class CityManager : MonoBehaviour
     void Start()
     {
         UIManager UI = GameObject.FindObjectOfType<UIManager>();
-        float fadeoutTime = 2f;
-        GameObject.FindObjectOfType<UIManager>().ShowMenu("TouchScreenControls");
-        UI.UI_fader.Fade(UIFader.FADE.FadeIn, fadeoutTime, 0);
+        float fadeoutTime = 1f;
+        if(inputType == INPUTTYPE.TOUCHSCREEN) GameObject.FindObjectOfType<UIManager>().ShowMenu("TouchScreenControls");
+        else GameObject.FindObjectOfType<UIManager>().ShowMenu("");
+     
 
     }
 
     void Update()
     {
-        
+        if (Input.GetKeyDown(KeyCode.Escape)) // 返回键
+        {
+            GameObject.FindObjectOfType<UIManager>().ShowMenu("MainMenu");
+        }
     }
 
     public void OnTouchScreenEvent(Vector3 direction)

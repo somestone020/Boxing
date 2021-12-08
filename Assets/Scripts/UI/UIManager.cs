@@ -2,12 +2,13 @@
 
 public class UIManager : MonoBehaviour {
 
-	public UIFader UI_fader;
-	public UI_Screen[] UIMenus;
+    public UIFader UI_fader;
+    public UI_Screen[] UIMenus;
+	public static UIManager Instance;
 
 	void Awake(){
 		DisableAllScreens();
-
+		Instance = this;
 		//don't destroy
 		DontDestroyOnLoad(gameObject);
 	}
