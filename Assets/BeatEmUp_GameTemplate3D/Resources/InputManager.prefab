@@ -47,28 +47,40 @@ MonoBehaviour:
   keyBoardControls:
   - Action: Left
     inputType: 0
-    key: 276
+    key: 97
   - Action: Right
     inputType: 0
-    key: 275
+    key: 100
   - Action: Up
     inputType: 0
-    key: 273
+    key: 119
   - Action: Down
     inputType: 0
-    key: 274
+    key: 115
   - Action: Punch
     inputType: 0
-    key: 122
+    key: 106
   - Action: Kick
     inputType: 0
-    key: 120
+    key: 107
   - Action: Defend
     inputType: 0
-    key: 99
+    key: 108
   - Action: Jump
     inputType: 0
     key: 32
+  - Action: SuperSkill
+    inputType: 0
+    key: 121
+  - Action: Skill1
+    inputType: 0
+    key: 117
+  - Action: Skill2
+    inputType: 0
+    key: 105
+  - Action: Skill3
+    inputType: 0
+    key: 111
   joypadControls:
   - Action: Punch
     inputType: 0

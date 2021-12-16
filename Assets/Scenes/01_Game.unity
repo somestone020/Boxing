@@ -2970,6 +2970,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy3.2
       objectReference: {fileID: 0}
+    - target: {fileID: 1027917220076984, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4221300857950164, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
       propertyPath: m_RootOrder
       value: 8
@@ -6141,6 +6145,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy3.3
       objectReference: {fileID: 0}
+    - target: {fileID: 1027917220076984, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4221300857950164, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
       propertyPath: m_RootOrder
       value: 9
@@ -7735,6 +7743,10 @@ PrefabInstance:
     - target: {fileID: 1027917220076984, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
       propertyPath: m_Name
       value: Enemy3.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1027917220076984, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4221300857950164, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
       propertyPath: m_RootOrder
@@ -9415,7 +9427,6 @@ MonoBehaviour:
   showMenuAtStart: HUD
   playMusic: 1
   createInputManager: 1
-  createUI: 1
   createAudioPlayer: 1
   createGameCamera: 1
 --- !u!4 &1081307974
@@ -10835,6 +10846,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy2.1
       objectReference: {fileID: 0}
+    - target: {fileID: 1027917220076984, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4221300857950164, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
       propertyPath: m_RootOrder
       value: 3
@@ -11378,6 +11393,10 @@ PrefabInstance:
     - target: {fileID: 1027917220076984, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
       propertyPath: m_Name
       value: Enemy2.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1027917220076984, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4221300857950164, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
       propertyPath: m_RootOrder
@@ -14763,7 +14782,6 @@ MonoBehaviour:
     EnemyList:
     - {fileID: 386642271}
     - {fileID: 823083665}
-    - {fileID: 0}
   - WaveName: Wave2
     AreaCollider: {fileID: 743693478}
     EnemyList:
@@ -15149,6 +15167,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy2.2
       objectReference: {fileID: 0}
+    - target: {fileID: 1027917220076984, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4221300857950164, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
       propertyPath: m_RootOrder
       value: 4
@@ -15471,6 +15493,10 @@ PrefabInstance:
     - target: {fileID: 1027917220076984, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
       propertyPath: m_Name
       value: Enemy3.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 1027917220076984, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4221300857950164, guid: 7d5feb6af67f18d43974e399da3c03b1, type: 3}
       propertyPath: m_RootOrder

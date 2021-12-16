@@ -13,6 +13,9 @@ public class DamageObject {
 	public bool knockDown;
 	public bool slowMotionEffect;
 	public bool DefenceOverride;
+	public float KnockdownUpForce;
+	public float KnockbackForce;
+
 	[HideInInspector]
 	public bool isGroundAttack;
 	[HideInInspector]
@@ -25,6 +28,7 @@ public class DamageObject {
 	public float collDistance;
 	public float collHeight;
 	public float hitTime;
+	public int consumeMp = 0;
 
 	[HideInInspector]
 	public GameObject inflictor;

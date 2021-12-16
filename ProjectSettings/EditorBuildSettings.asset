@@ -5,9 +5,9 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
-    path: Assets/Scenes/00_InitScene.unity
-    guid: c10e30d81e4be324b8869eac84511afc
+  - enabled: 0
+    path: 
+    guid: 00000000000000000000000000000000
   - enabled: 1
     path: Assets/Scenes/00_MainMenu.unity
     guid: 2d83d4da4e999ff489e715f72aae4f31
@@ -24,6 +24,6 @@ EditorBuildSettings:
     path: Assets/Scenes/04_TrainingRoom.unity
     guid: 5de5d1375dd2f2f429938096cabb81a3
   - enabled: 1
-    path: Assets/Scenes/CityScene.unity
+    path: Assets/ATest/CityScene.unity
     guid: 1cd82df167d3d4948963da8164723260
   m_configObjects: {}

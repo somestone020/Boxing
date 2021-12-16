@@ -31,8 +31,8 @@ public class EnemyWaveSystem : MonoBehaviour {
 	}
 
 	void Start(){
-		currentWave = 0;
-		UpdateAreaColliders();
+        currentWave = 0;
+        UpdateAreaColliders();
 		StartNewWave();
 	}
 

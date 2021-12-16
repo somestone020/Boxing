@@ -82,9 +82,9 @@ public class PlayerMovement : MonoBehaviour {
 
 	void FixedUpdate() {
 		if(!MovementStates.Contains(playerState.currentState) || isDead) return;
-
+	
 		//defend
-		if(playerState.currentState == UNITSTATE.DEFEND){
+		if (playerState.currentState == UNITSTATE.DEFEND){
 			TurnToCurrentDirection();
 			return;
 		}
@@ -101,17 +101,18 @@ public class PlayerMovement : MonoBehaviour {
 			return;
 		}
 
-		//A short recovery time after landing
-		if(playerState.currentState == UNITSTATE.LAND && Time.time - landTime > landRecoveryTime) playerState.SetState(UNITSTATE.IDLE);
 
-		//air and ground Movement
+		//着陆后的短暂恢复时间
+		if (playerState.currentState == UNITSTATE.LAND && Time.time - landTime > landRecoveryTime) playerState.SetState(UNITSTATE.IDLE);
+
+		//空中和地面运动
 		bool isGrounded = IsGrounded();
 		animator.SetAnimatorBool("isGrounded", isGrounded);
 		if(isGrounded) animator.SetAnimatorBool("Falling", false);
 
-		if(isGrounded){
-			MoveGrounded();
-		} else {
+		if (isGrounded){
+            MoveGrounded();
+        } else {
 			MoveAirborne();
 		}
 
@@ -129,33 +130,32 @@ public class PlayerMovement : MonoBehaviour {
 		if (rb != null && (inputDirection.sqrMagnitude>0 && !WallInFront())) {
 
 			//根据当前状态将“移动速度”设置为“奔跑速度”或“行走速度”
-			float movementSpeed = playerState.currentState == UNITSTATE.RUN? runSpeed : walkSpeed;
+			//float movementSpeed = playerState.currentState == UNITSTATE.RUN? runSpeed : walkSpeed;
+			float movementSpeed = runSpeed;
 
 			rb.velocity = new Vector3( inputDirection.x * -movementSpeed, rb.velocity.y + Physics.gravity.y * Time.fixedDeltaTime, inputDirection.y * -ZSpeed);
-			if(animator) animator.SetAnimatorFloat("MovementSpeed", rb.velocity.magnitude);
+			if (animator) animator.SetAnimatorFloat("MovementSpeed", rb.velocity.magnitude);
 
 		} else {
 
 			//stop moving, but still apply gravity
 			rb.velocity = new Vector3(0, rb.velocity.y + Physics.gravity.y * Time.fixedDeltaTime, 0);
-
 			if(animator) animator.SetAnimatorFloat("MovementSpeed", 0);
 			playerState.SetState(UNITSTATE.IDLE);
 		}
 
 		//sets the run state in the animator to true or false
-		animator.SetAnimatorBool("Run", playerState.currentState == UNITSTATE.RUN);
+		animator.SetAnimatorBool("Run", (playerState.currentState == UNITSTATE.RUN || playerState.currentState == UNITSTATE.WALK));
 	}
 
 	//movement in the air
 	void MoveAirborne(){
-
 		//falling down
 		if(rb.velocity.y < 0.1f && playerState.currentState != UNITSTATE.KNOCKDOWN)	animator.SetAnimatorBool("Falling", true);
 
 		if(!WallInFront()) {
 
-			//movement direction based on current input
+			//基于当前输入的运动方向
 			int dir = Mathf.Clamp(Mathf.RoundToInt(-inputDirection.x), -1, 1);
 			float xpeed = Mathf.Clamp(rb.velocity.x + AirMaxSpeed * dir * Time.fixedDeltaTime * AirAcceleration, -AirMaxSpeed, AirMaxSpeed);
 			float downForce = rb.velocity.y>0? 0 : jumpDownwardsForce; //adds a small downwards force when going down 
@@ -185,6 +185,8 @@ public class PlayerMovement : MonoBehaviour {
 		//play sfx
 		if(jumpUpVoice != "") GlobalAudioPlayer.PlaySFXAtPosition(jumpUpVoice, transform.position);
 	}
+
+
 
 	//player has landed after a jump
 	void HasLanded(){
@@ -217,23 +219,21 @@ public class PlayerMovement : MonoBehaviour {
 		int dir2 = Mathf.RoundToInt(Mathf.Sign((float)-inputDirection.x));
 		if(Mathf.Abs(inputDirection.x) > 0) SetDirection((DIRECTION)dir2);
 		inputDirection = dir;
-
-		//start running on double tap
-		if(doubleTapActive && IsGrounded() && Mathf.Abs(dir.x)>0) playerState.SetState(UNITSTATE.RUN);
-	}
+        //start running on double tap
+        if (IsGrounded() && Mathf.Abs(dir.x) > 0) playerState.SetState(UNITSTATE.RUN);
+    }
 
 	//input actions
 	void OnInputEvent(string action, BUTTONSTATE buttonState) {
 
 		//当我们处于死亡状态或此状态未处于活动状态时忽略输入
 		if (!MovementStates.Contains(playerState.currentState) || isDead) return;
-
 		//start a jump
-		if(action == "Jump" && buttonState == BUTTONSTATE.PRESS && IsGrounded() && playerState.currentState != UNITSTATE.JUMPING) JumpNextFixedUpdate = true;
-
+		if (action == "Jump" && buttonState == BUTTONSTATE.PRESS && IsGrounded() && playerState.currentState != UNITSTATE.JUMPING) JumpNextFixedUpdate = true;
+		//if(action == "SuperSkill" && buttonState == BUTTONSTATE.PRESS && IsGrounded()) isSuperSkill = true;
 		//start running when a run button is pressed (e.g. Joypad controls)
-		if(action == "Run") playerState.SetState(UNITSTATE.RUN);
-	}
+        if (action == "Run" || action == "Walk") playerState.SetState(UNITSTATE.RUN);
+    }
 
 	#endregion
 		

@@ -70,13 +70,13 @@ public class EnemyAI : EnemyActions, IDamagable<DamageObject>{
 			//attack the target
 			if (!cliffSpotted){
 				if (Time.time - lastAttackTime > attackInterval) {
-					ATTACK();
-				} else {
-					Ready();
-				}
-				return;
+                    ATTACK();
+                }
+                else {
+                    Ready();
+                }
+                return;
 			}
-
 			//actions for ATTACKRANGE distance
 			if (enemyTactic == ENEMYTACTIC.KEEPCLOSEDISTANCE) WalkTo(closeRangeDistance, 0f);
 			if (enemyTactic == ENEMYTACTIC.KEEPMEDIUMDISTANCE) WalkTo(midRangeDistance, RangeMarging);

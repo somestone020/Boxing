@@ -3,14 +3,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 
-[RequireComponent (typeof(Rigidbody))]
-[RequireComponent (typeof(UnitState))]
+[RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(UnitState))]
 public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 
-	[Header ("Linked Components")]
+	[Header("Linked Components")]
 	public Transform weaponBone; //the bone were weapon will be parented on
+	public Transform attackBone;
 	private UnitAnimator animator; //link to the animator component
-	private UnitState playerState; //主角状态
+	[HideInInspector]
+	public UnitState playerState; //主角状态
 	private Rigidbody rb;
 
 	[Header("Attack Data & Combos")]
@@ -26,6 +28,10 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 	public DamageObject RunningPunch; //跑步拳头攻击
 	public DamageObject RunningKick; //跑步踢腿攻击
 	private DamageObject lastAttack; //上次发生的攻击的数据
+	public DamageObject superSkillData;
+	public DamageObject skill1Data;
+	public DamageObject skill2Data;
+	public DamageObject skill3Data;
 
 	[Header("Settings")]
 	public bool blockAttacksFromBehind = false; //阻挡敌人从背后发起的攻击
@@ -49,7 +55,7 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 	public string defenceHitSFX = "";
 	public string dropSFX = "";
 
-	[Header ("Stats")]
+	[Header("Stats")]
 	public DIRECTION currentDirection; //当前方向
 	public GameObject itemInRange; //当前在可交互范围内的item
 	private Weapon currentWeapon; //玩家当前持有的武器
@@ -58,7 +64,7 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 	private bool continueKickCombo; //如果踢组合需要继续，则为true
 	private float lastAttackTime = 0; //上次攻击的时间
 	[SerializeField]
-	private bool targetHit; //如果上次命中目标，则为true
+	public bool targetHit; //如果上次命中目标，则为true
 	private int hitKnockDownCount = 0; //玩家连续被击中的次数
 	private int hitKnockDownResetTime = 2; //击倒计数器重置前的时间
 	private float LastHitTime = 0; //上次我们被击中的时间
@@ -72,15 +78,16 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 	private bool updateVelocity;
 	private string lastAttackInput;
 	private DIRECTION lastAttackDirection;
+	private int mpRecoverTime = 2;
 
 	//玩家可以攻击的状态列表
 	private List<UNITSTATE> AttackStates = new List<UNITSTATE> {
-		UNITSTATE.IDLE, 
-		UNITSTATE.WALK, 
-		UNITSTATE.RUN, 
-		UNITSTATE.JUMPING, 
+		UNITSTATE.IDLE,
+		UNITSTATE.WALK,
+		UNITSTATE.RUN,
+		UNITSTATE.JUMPING,
 		UNITSTATE.PUNCH,
-		UNITSTATE.KICK, 
+		UNITSTATE.KICK,
 		UNITSTATE.DEFEND,
 	};
 
@@ -120,7 +127,7 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 
 	//---
 
-	void OnEnable(){
+	void OnEnable() {
 		InputManager.onInputEvent += OnInputEvent;
 		InputManager.onDirectionInputEvent += OnDirectionInputEvent;
 	}
@@ -143,39 +150,39 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 		HitLayerMask = (1 << EnemyLayer) | (1 << DestroyableObjectLayer);
 
 		//display error messages for missing components
-		if (!animator) Debug.LogError ("No player animator found inside " + gameObject.name);
-		if (!playerState) Debug.LogError ("No playerState component found on " + gameObject.name);
-		if (!rb) Debug.LogError ("No rigidbody component found on " + gameObject.name);
+		if (!animator) Debug.LogError("No player animator found inside " + gameObject.name);
+		if (!playerState) Debug.LogError("No playerState component found on " + gameObject.name);
+		if (!rb) Debug.LogError("No rigidbody component found on " + gameObject.name);
 
 		//set invulnerable during jump
 		if (!invulnerableDuringJump) {
-			HitableStates.Add (UNITSTATE.JUMPING);
-			HitableStates.Add (UNITSTATE.JUMPKICK);
+			HitableStates.Add(UNITSTATE.JUMPING);
+			HitableStates.Add(UNITSTATE.JUMPKICK);
 		}
 	}
 
 	void Update() {
-		
+
 		//the player is colliding with the ground
-		if(animator) isGrounded = animator.animator.GetBool("isGrounded");
+		if (animator) isGrounded = animator.animator.GetBool("isGrounded");
 
 		//update defence state every frame
 		Defend(InputManager.defendKeyDown);
 	}
 
 	//physics update
-	void FixedUpdate(){
-		if (updateVelocity){
+	void FixedUpdate() {
+		if (updateVelocity) {
 			rb.velocity = fixedVelocity;
 			updateVelocity = false;
 		}
 	}
 
 	//late Update
-	void LateUpdate(){
+	void LateUpdate() {
 
 		//apply any root motion offsets to parent
-		if(animator && animator.GetComponent<Animator>().applyRootMotion && animator.transform.localPosition != Vector3.zero) {
+		if (animator && animator.GetComponent<Animator>().applyRootMotion && animator.transform.localPosition != Vector3.zero) {
 			Vector3 offset = animator.transform.localPosition;
 			animator.transform.localPosition = Vector3.zero;
 			transform.position += offset * -(int)currentDirection;
@@ -183,36 +190,134 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 	}
 
 	//set velocity in next fixed update
-	void SetVelocity(Vector3 velocity){
+	void SetVelocity(Vector3 velocity) {
 		fixedVelocity = velocity;
 		updateVelocity = true;
 	}
-		
+
 	//movement input event
-	void OnDirectionInputEvent(Vector2 inputVector, bool doubleTapActive){
-		if(!MovementStates.Contains(playerState.currentState)) return;
+	void OnDirectionInputEvent(Vector2 inputVector, bool doubleTapActive) {
+		if (!MovementStates.Contains(playerState.currentState)) return;
 		int dir = Mathf.RoundToInt(Mathf.Sign((float)-inputVector.x));
-		if(Mathf.Abs(inputVector.x)>0) currentDirection = (DIRECTION)dir;
+		if (Mathf.Abs(inputVector.x) > 0) currentDirection = (DIRECTION)dir;
 	}
 
 	#region Combat Input Events
 	//战斗Input事件
 	private void OnInputEvent(string action, BUTTONSTATE buttonState) {
-		if (AttackStates.Contains (playerState.currentState) && !isDead) {
+		if (AttackStates.Contains(playerState.currentState) && !isDead) {
+
+
+			if ((action == "Punch" || action == "Kick") && buttonState == BUTTONSTATE.PRESS && playerState.currentState == UNITSTATE.RUN && isGrounded)
+			{
+				animator.SetAnimatorBool("Run", false);
+				playerState.currentState = UNITSTATE.IDLE;
+				//if (RunningPunch.animTrigger.Length > 0) doAttack(RunningPunch, UNITSTATE.ATTACK, "Punch");
+				//return;
+			}
+
 
 			//奔跑拳击
-			if(action == "Punch" && buttonState == BUTTONSTATE.PRESS && playerState.currentState == UNITSTATE.RUN && isGrounded){
-				animator.SetAnimatorBool("Run", false);
-				if(RunningPunch.animTrigger.Length>0) doAttack(RunningPunch, UNITSTATE.ATTACK, "Punch");
+			//if(action == "Punch" && buttonState == BUTTONSTATE.PRESS && playerState.currentState == UNITSTATE.RUN && isGrounded){
+			//	animator.SetAnimatorBool("Run", false);
+			//	if(RunningPunch.animTrigger.Length>0) doAttack(RunningPunch, UNITSTATE.ATTACK, "Punch");
+			//	return;
+			//}
+
+			//大招
+			if (action == "SuperSkill" && buttonState == BUTTONSTATE.PRESS && isGrounded)
+			{
+				HealthSystem healthSystem = GetComponent<HealthSystem>();
+				if (healthSystem != null && healthSystem.CheckSkillValue(superSkillData.consumeMp))
+				{
+					healthSystem.SubstractSkillValue(superSkillData.consumeMp, mpRecoverTime);
+					playerState.SetState(UNITSTATE.SUPERSKILL);
+					TurnToDir(currentDirection);
+					lastAttack = superSkillData;
+					lastAttack.inflictor = gameObject;
+					lastAttackTime = Time.time;
+					lastAttackInput = "SuperSkill";
+					lastAttackDirection = currentDirection;
+					animator.SetAnimatorTrigger("SuperSkill");
+					return;
+				}
+
+			}
+			//招式1
+			if (action == "Skill1" && buttonState == BUTTONSTATE.PRESS && playerState.currentState == UNITSTATE.IDLE && isGrounded)
+			{
+
+				HealthSystem healthSystem = GetComponent<HealthSystem>();
+				if (healthSystem != null && healthSystem.CheckSkillValue(skill1Data.consumeMp))
+				{
+					playerState.SetState(UNITSTATE.SKILL1);
+					healthSystem.SubstractSkillValue(skill1Data.consumeMp, mpRecoverTime);
+					TurnToDir(currentDirection);
+					StartCoroutine(setRunSkill1(2f, 0.2f));
+					lastAttack = skill1Data;
+					lastAttack.inflictor = gameObject;
+					lastAttackTime = Time.time;
+					lastAttackInput = "Skill1";
+					lastAttackDirection = currentDirection;
+					animator.SetAnimatorBool("SkillEnd", false);
+					animator.SetAnimatorTrigger("Skill1");
+					Invoke("Ready", 3.8f);
+					return;
+				}
+
+
+			}
+			//招式2
+			if (action == "Skill2" && buttonState == BUTTONSTATE.PRESS && playerState.currentState == UNITSTATE.IDLE && isGrounded)
+			{
+				HealthSystem healthSystem = GetComponent<HealthSystem>();
+				if (healthSystem != null && healthSystem.CheckSkillValue(skill2Data.consumeMp))
+				{
+					playerState.SetState(UNITSTATE.SKILL2);
+					healthSystem.SubstractSkillValue(skill2Data.consumeMp, mpRecoverTime);
+					TurnToDir(currentDirection);
+					lastAttack = skill2Data;
+					lastAttack.inflictor = gameObject;
+					lastAttackTime = Time.time;
+					lastAttackInput = "Skill2";
+					lastAttackDirection = currentDirection;
+					animator.SetAnimatorTrigger("Skill2");
+					Invoke("Ready", 1);
+					return;
+				}
+
+
+				return;
+			}
+			//招式3
+			if (action == "Skill3" && buttonState == BUTTONSTATE.PRESS && playerState.currentState == UNITSTATE.IDLE && isGrounded)
+			{
+				HealthSystem healthSystem = GetComponent<HealthSystem>();
+				if (healthSystem != null && healthSystem.CheckSkillValue(skill3Data.consumeMp))
+				{
+					healthSystem.SubstractSkillValue(skill3Data.consumeMp, mpRecoverTime);
+					playerState.SetState(UNITSTATE.SKILL3);
+					lastAttack = skill3Data;
+					lastAttack.inflictor = gameObject;
+					lastAttackTime = Time.time;
+					lastAttackInput = "Skill3";
+					lastAttackDirection = currentDirection;
+
+					StartCoroutine(showSkill1Effect());
+					animator.SetAnimatorTrigger("Skill3");
+					Invoke("Ready", 1);
+					return;
+				}
+
 				return;
 			}
 
 			//奔跑踢腿
-			if(action == "Kick" && buttonState == BUTTONSTATE.PRESS && playerState.currentState == UNITSTATE.RUN && isGrounded){
-				animator.SetAnimatorBool("Run", false);
-				if(RunningKick.animTrigger.Length>0) doAttack(RunningKick, UNITSTATE.ATTACK, "Kick");
-				return;
-			}
+			//if(action == "Kick" && buttonState == BUTTONSTATE.PRESS && playerState.currentState == UNITSTATE.RUN && isGrounded){
+			//	animator.SetAnimatorBool("Run", false);
+			//	if(RunningKick.animTrigger.Length>0) doAttack(RunningKick, UNITSTATE.ATTACK, "Kick");
+			//	return;
+			//}
 
 			//与范围内的物品交互
 			if (action == "Punch" && buttonState == BUTTONSTATE.PRESS && itemInRange != null && isGrounded && currentWeapon == null) {
@@ -227,55 +332,55 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 			}
 
 			//地面拳击
-			if (action == "Punch" && buttonState == BUTTONSTATE.PRESS && (playerState.currentState != UNITSTATE.PUNCH && NearbyEnemyDown()) && isGrounded) {
-				if(GroundPunchData.animTrigger.Length > 0) doAttack(GroundPunchData, UNITSTATE.GROUNDPUNCH, "Punch");
-				return;
-			}
+			//if (action == "Punch" && buttonState == BUTTONSTATE.PRESS && (playerState.currentState != UNITSTATE.PUNCH && NearbyEnemyDown()) && isGrounded) {
+			//	if(GroundPunchData.animTrigger.Length > 0) doAttack(GroundPunchData, UNITSTATE.GROUNDPUNCH, "Punch");
+			//	return;
+			//}
 
 			//地面踢腿
-			if (action == "Kick" && buttonState == BUTTONSTATE.PRESS && (playerState.currentState != UNITSTATE.KICK && NearbyEnemyDown()) && isGrounded) {
-				if(GroundKickData.animTrigger.Length > 0) doAttack(GroundKickData, UNITSTATE.GROUNDKICK, "Kick");
-				return;
-			}
+			//if (action == "Kick" && buttonState == BUTTONSTATE.PRESS && (playerState.currentState != UNITSTATE.KICK && NearbyEnemyDown()) && isGrounded) {
+			//	if(GroundKickData.animTrigger.Length > 0) doAttack(GroundKickData, UNITSTATE.GROUNDKICK, "Kick");
+			//	return;
+			//}
 
 			//切换到其他组合链时重置组合（用户设置）
-			if (resetComboChainOnChangeCombo && (action != lastAttackInput)){
+			if (resetComboChainOnChangeCombo && (action != lastAttackInput)) {
 				attackNum = -1;
 			}
 
-            //默认拳击
-            if (action == "Punch" && buttonState == BUTTONSTATE.PRESS && playerState.currentState != UNITSTATE.PUNCH && playerState.currentState != UNITSTATE.KICK && isGrounded)
-            {
+			//默认拳击
+			if (action == "Punch" && buttonState == BUTTONSTATE.PRESS && playerState.currentState != UNITSTATE.PUNCH && playerState.currentState != UNITSTATE.KICK && isGrounded && playerState.currentState != UNITSTATE.RUN)
+			{
 
-                //如果时间在组合窗口内，则继续下一次攻击
-                bool insideComboWindow = (lastAttack != null && (Time.time < (lastAttackTime + lastAttack.duration + lastAttack.comboResetTime)));
-                if (insideComboWindow && !continuePunchCombo && (attackNum < PunchCombo.Length - 1))
-                {
-                    attackNum += 1;
-                }
-                else
-                {
-                    attackNum = 0;
-                }
+				//如果时间在组合窗口内，则继续下一次攻击
+				bool insideComboWindow = (lastAttack != null && (Time.time < (lastAttackTime + lastAttack.duration + lastAttack.comboResetTime)));
+				if (insideComboWindow && !continuePunchCombo && (attackNum < PunchCombo.Length - 1))
+				{
+					attackNum += 1;
+				}
+				else
+				{
+					attackNum = 0;
+				}
 
-                if (PunchCombo[attackNum] != null && PunchCombo[attackNum].animTrigger.Length > 0) doAttack(PunchCombo[attackNum], UNITSTATE.PUNCH, "Punch");
-                return;
-            }
+				if (PunchCombo[attackNum] != null && PunchCombo[attackNum].animTrigger.Length > 0) doAttack(PunchCombo[attackNum], UNITSTATE.PUNCH, "Punch");
+				return;
+			}
 
-            //如果在拳击攻击中按下“punch”，则推进拳击组合
-            if (action == "Punch" && buttonState == BUTTONSTATE.PRESS && (playerState.currentState == UNITSTATE.PUNCH) && !continuePunchCombo && isGrounded)
-            {
-                if (attackNum < PunchCombo.Length - 1)
-                {
-                    continuePunchCombo = true;
-                    continueKickCombo = false;
-                    return;
-                }
-            }
+			//如果在拳击攻击中按下“punch”，则推进拳击组合
+			if (action == "Punch" && buttonState == BUTTONSTATE.PRESS && (playerState.currentState == UNITSTATE.PUNCH) && !continuePunchCombo && isGrounded)
+			{
+				if (attackNum < PunchCombo.Length - 1)
+				{
+					continuePunchCombo = true;
+					continueKickCombo = false;
+					return;
+				}
+			}
 
-            //跳拳击
-            if (action == "Punch" && buttonState == BUTTONSTATE.PRESS && !isGrounded) {
-				if(JumpKickData.animTrigger.Length > 0) {	
+			//跳拳击
+			if (action == "Punch" && buttonState == BUTTONSTATE.PRESS && !isGrounded) {
+				if (JumpKickData.animTrigger.Length > 0) {
 					doAttack(JumpKickData, UNITSTATE.JUMPKICK, "Kick");
 					StartCoroutine(JumpKickInProgress());
 				}
@@ -284,7 +389,7 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 
 			//跳踢腿
 			if (action == "Kick" && buttonState == BUTTONSTATE.PRESS && !isGrounded) {
-				if(JumpKickData.animTrigger.Length > 0) {
+				if (JumpKickData.animTrigger.Length > 0) {
 					doAttack(JumpKickData, UNITSTATE.JUMPKICK, "Kick");
 					StartCoroutine(JumpKickInProgress());
 				}
@@ -292,11 +397,11 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 			}
 
 			//默认踢腿
-			if (action == "Kick" && buttonState == BUTTONSTATE.PRESS && playerState.currentState != UNITSTATE.KICK && playerState.currentState != UNITSTATE.PUNCH && isGrounded) {
+			if (action == "Kick" && buttonState == BUTTONSTATE.PRESS && playerState.currentState != UNITSTATE.KICK && playerState.currentState != UNITSTATE.PUNCH && isGrounded && playerState.currentState != UNITSTATE.RUN) {
 
 				//continue to the next attack if the time is inside the combo window
 				bool insideComboWindow = (lastAttack != null && (Time.time < (lastAttackTime + lastAttack.duration + lastAttack.comboResetTime)));
-				if (insideComboWindow && !continueKickCombo && (attackNum < KickCombo.Length -1)) {
+				if (insideComboWindow && !continueKickCombo && (attackNum < KickCombo.Length - 1)) {
 					attackNum += 1;
 				} else {
 					attackNum = 0;
@@ -305,10 +410,10 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 				doAttack(KickCombo[attackNum], UNITSTATE.KICK, "Kick");
 				return;
 			}
-				
+
 			//advance the kick combo if "kick" was pressed during a kick attack
 			if (action == "Kick" && buttonState == BUTTONSTATE.PRESS && (playerState.currentState == UNITSTATE.KICK) && !continueKickCombo && isGrounded) {
-				if (attackNum < KickCombo.Length - 1){
+				if (attackNum < KickCombo.Length - 1) {
 					continueKickCombo = true;
 					continuePunchCombo = false;
 					return;
@@ -321,7 +426,7 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 
 	#region Combat functions
 
-	private void doAttack(DamageObject damageObject, UNITSTATE state, string inputAction){
+	private void doAttack(DamageObject damageObject, UNITSTATE state, string inputAction) {
 		animator.SetAnimatorTrigger(damageObject.animTrigger);
 		playerState.SetState(state);
 
@@ -335,19 +440,19 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 		//转向当前输入方向
 		TurnToDir(currentDirection);
 
-		if(isGrounded) SetVelocity(Vector3.zero);
-		if(damageObject.forwardForce>0) animator.AddForce(damageObject.forwardForce);
+		if (isGrounded) SetVelocity(Vector3.zero);
+		if (damageObject.forwardForce > 0) animator.AddForce(damageObject.forwardForce);
 
-		if(state == UNITSTATE.JUMPKICK)	return;
-		Invoke ("Ready", damageObject.duration);
+		if (state == UNITSTATE.JUMPKICK) return;
+		Invoke("Ready", damageObject.duration);
 	}
 
 	//使用现有装备的武器
-	void useCurrentWeapon(){
-		playerState.SetState (UNITSTATE.USEWEAPON);
+	void useCurrentWeapon() {
+		playerState.SetState(UNITSTATE.USEWEAPON);
 		TurnToDir(currentDirection);
 		SetVelocity(Vector3.zero);
-	
+
 		//save attack data
 		lastAttackInput = "WeaponAttack";
 		lastAttackTime = Time.time;
@@ -355,24 +460,62 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 		lastAttack.inflictor = gameObject;
 		lastAttackDirection = currentDirection;
 
-		if(!string.IsNullOrEmpty(currentWeapon.damageObject.animTrigger)) animator.SetAnimatorTrigger(currentWeapon.damageObject.animTrigger);
-		if(!string.IsNullOrEmpty(currentWeapon.useSound)) GlobalAudioPlayer.PlaySFX(currentWeapon.useSound);
-		Invoke ("Ready", currentWeapon.damageObject.duration);
+		if (!string.IsNullOrEmpty(currentWeapon.damageObject.animTrigger)) animator.SetAnimatorTrigger(currentWeapon.damageObject.animTrigger);
+		if (!string.IsNullOrEmpty(currentWeapon.useSound)) GlobalAudioPlayer.PlaySFX(currentWeapon.useSound);
+		Invoke("Ready", currentWeapon.damageObject.duration);
 
 		//weapon degeneration
-		if(currentWeapon.degenerateType == DEGENERATETYPE.DEGENERATEONUSE) currentWeapon.useWeapon();
-		if(currentWeapon.degenerateType == DEGENERATETYPE.DEGENERATEONUSE && currentWeapon.timesToUse == 0) StartCoroutine(destroyCurrentWeapon(currentWeapon.damageObject.duration));
-		if(currentWeapon.degenerateType == DEGENERATETYPE.DEGENERATEONHIT && currentWeapon.timesToUse == 1) StartCoroutine(destroyCurrentWeapon(currentWeapon.damageObject.duration));
+		if (currentWeapon.degenerateType == DEGENERATETYPE.DEGENERATEONUSE) currentWeapon.useWeapon();
+		if (currentWeapon.degenerateType == DEGENERATETYPE.DEGENERATEONUSE && currentWeapon.timesToUse == 0) StartCoroutine(destroyCurrentWeapon(currentWeapon.damageObject.duration));
+		if (currentWeapon.degenerateType == DEGENERATETYPE.DEGENERATEONHIT && currentWeapon.timesToUse == 1) StartCoroutine(destroyCurrentWeapon(currentWeapon.damageObject.duration));
 	}
 
 	//移除当前武器
-	IEnumerator destroyCurrentWeapon(float delay){
+	IEnumerator destroyCurrentWeapon(float delay) {
 		yield return new WaitForSeconds(delay);
-		if(currentWeapon.degenerateType == DEGENERATETYPE.DEGENERATEONUSE) GlobalAudioPlayer.PlaySFX(currentWeapon.breakSound);
+		if (currentWeapon.degenerateType == DEGENERATETYPE.DEGENERATEONUSE) GlobalAudioPlayer.PlaySFX(currentWeapon.breakSound);
 		Destroy(currentWeapon.playerHandPrefab);
 		currentWeapon.BreakWeapon();
 		currentWeapon = null;
 	}
+
+	private IEnumerator setRunSkill1(float dic, float speed)
+	{
+		if (currentDirection == DIRECTION.Left || currentDirection == DIRECTION.Right)
+		{
+			float moveTime = 0f;
+			Vector3 vec = rb.position;
+			while (moveTime < speed)
+			{
+				moveTime += Time.deltaTime;
+				Vector3 lerp = Vector3.Lerp(vec, vec + new Vector3((int)currentDirection, 0, 0) * dic, moveTime / speed);
+				rb.MovePosition(lerp);
+				yield return new WaitForSeconds(0);
+			}
+			//playerState.currentState = UNITSTATE.IDLE;
+		}
+
+	}
+
+	private IEnumerator showSkill1Effect()
+    {
+		GameObject obj = GameObject.Instantiate(Resources.Load("Skill1Effect"),rb.transform) as GameObject;
+		obj.transform.position = rb.transform.position + new Vector3((int)currentDirection * 1,1,0);
+		obj.GetComponent<Skill1EffectEvent>().InitData(skill3Data);
+
+        yield return new WaitForSeconds(0.15f);
+        float speed = 0.25f;
+		float dis = 0;
+		Vector3 vec = obj.transform.position;
+		while (dis < speed)
+        {
+			obj.transform.position = Vector3.Lerp(vec, vec + new Vector3((int)currentDirection * 3, 0, 0), dis / speed);
+			dis += Time.deltaTime;
+			yield return new WaitForSeconds(0);
+		}
+		Destroy(obj);
+    }
+
 
 	//returns the current weapon
 	public Weapon GetCurrentWeapon(){
@@ -438,7 +581,6 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 
 	//检查我们是否击中了什么（动画事件）
 	public void CheckForHit() {
-
 		//在角色前面绘制一个命中框，以查看它与哪些对象发生碰撞
 		Vector3 boxPosition = transform.position + (Vector3.up * lastAttack.collHeight) + Vector3.right * ((int)lastAttackDirection * lastAttack.collDistance);
 		Vector3 boxSize = new Vector3 (lastAttack.CollSize/2, lastAttack.CollSize/2, hitZRange/2);
@@ -519,21 +661,25 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 			}
 
 			//check for knockdown
-			if ((hitKnockDownCount >= knockdownHitCount || !IsGrounded() || d.knockDown) && playerState.currentState != UNITSTATE.KNOCKDOWN) {
+			if ((hitKnockDownCount >= knockdownHitCount || !IsGrounded() || d.knockDown) && playerState.currentState != UNITSTATE.KNOCKDOWN && playerState.currentState != UNITSTATE.SKILL1) {
 				hitKnockDownCount = 0;
 				StopCoroutine ("KnockDownSequence");
-				StartCoroutine ("KnockDownSequence", d.inflictor);
+				StartCoroutine ("KnockDownSequence", d);
 				GlobalAudioPlayer.PlaySFXAtPosition (d.hitSFX, transform.position + Vector3.up);
 				GlobalAudioPlayer.PlaySFXAtPosition (knockdownVoiceSFX, transform.position + Vector3.up);
 				return;
 			}
+            //default hit
+			if(playerState.currentState != UNITSTATE.SKILL1)
+            {
+				int i = Random.Range(1, 3);
+				animator.SetAnimatorBool("Run", false);
+				animator.SetAnimatorTrigger("Hit" + i);
+				playerState.SetState(UNITSTATE.HIT);
+			}
 
-			//default hit
-			int i = Random.Range (1, 3);
-			animator.SetAnimatorTrigger ("Hit" + i);
 			SetVelocity(Vector3.zero);
-			playerState.SetState (UNITSTATE.HIT);
-
+			
 			//add a small force from the impact
 			if (isFacingTarget(d.inflictor)) { 
 				animator.AddForce (-1.5f);
@@ -623,13 +769,15 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 	#region 击倒序列
 
 	//击倒序列
-	public IEnumerator KnockDownSequence(GameObject inflictor) {
+	public IEnumerator KnockDownSequence(DamageObject damage) {
 		playerState.SetState (UNITSTATE.KNOCKDOWN);
 		animator.StopAllCoroutines();
 		yield return new WaitForFixedUpdate();
 
 		//look towards the direction of the incoming attack
-		int dir = inflictor.transform.position.x > transform.position.x ? 1 : -1;
+		Debug.Log(11);
+		Debug.Log(damage.inflictor);
+		int dir = damage.inflictor.transform.position.x > transform.position.x ? 1 : -1;
 		currentDirection = (DIRECTION)dir;
 		TurnToDir(currentDirection);
 
@@ -643,7 +791,7 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 		//add knockback force
 		animator.SetAnimatorTrigger("KnockDown_Up");
 		while(IsGrounded()){
-			SetVelocity(new Vector3 (KnockbackForce * -dir , KnockdownUpForce, 0));
+			SetVelocity(new Vector3 (damage.KnockbackForce * -dir , damage.KnockdownUpForce, 0));
 			yield return new WaitForFixedUpdate();
 		}
 

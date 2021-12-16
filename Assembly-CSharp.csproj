@@ -101,6 +101,7 @@
     <Compile Include="Assets\Scripts\Other\MathUtilities.cs" />
     <Compile Include="Assets\Scripts\Other\Projectile.cs" />
     <Compile Include="Assets\Scripts\Other\SimpleBlobShadow.cs" />
+    <Compile Include="Assets\Scripts\Other\Skill1EffectEvent.cs" />
     <Compile Include="Assets\Scripts\Other\StateMachineFunctions.cs" />
     <Compile Include="Assets\Scripts\Other\TimeToLive.cs" />
     <Compile Include="Assets\Scripts\Other\TrainingDummy.cs" />
@@ -122,6 +123,7 @@
     <Compile Include="Assets\Scripts\UI\UICharSelectionPortrait.cs" />
     <Compile Include="Assets\Scripts\UI\UIFader.cs" />
     <Compile Include="Assets\Scripts\UI\UIHUDHealthBar.cs" />
+    <Compile Include="Assets\Scripts\UI\UIHUDSkillBar.cs" />
     <Compile Include="Assets\Scripts\UI\UIHelpText.cs" />
     <Compile Include="Assets\Scripts\UI\UIInputList.cs" />
     <Compile Include="Assets\Scripts\UI\UIJoystick.cs" />

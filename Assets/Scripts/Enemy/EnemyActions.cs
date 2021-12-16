@@ -203,15 +203,52 @@ public class EnemyActions : MonoBehaviour {
 
 	#region We are Hit
 
+	IEnumerator setSkill1(DamageObject d)
+    {
+
+        yield return new WaitForSeconds(0.1f);
+        animator.animator.speed = 0;
+        yield return new WaitForSeconds(2.8f);
+        animator.animator.speed = 1;
+        yield return new WaitForSeconds(0.2f);
+        rb.transform.SetParent(oldEnemyParent);
+		rb.useGravity = true;
+        rb.transform.position = new Vector3(rb.transform.position.x, 0, rb.transform.position.z);
+        StartCoroutine(KnockDownSequence(d, 3f));
+
+    }
+
+    Transform oldEnemyParent;
 	//单位被击中
 	public void Hit(DamageObject d){
 		if(HitableStates.Contains(enemyState)) {
+			
+
+			if (d.animTrigger == "Skill1")
+            {
+				CancelInvoke();
+				StopAllCoroutines();
+				int rand = Random.Range(1, 3);
+				animator.SetAnimatorTrigger("Hit1");
+				enemyState = UNITSTATE.HIT;
+                SetVelocity(Vector3.zero);
+
+                rb.useGravity = false;
+				Transform targetVec = target.GetComponent<PlayerCombat>().attackBone;
+				oldEnemyParent = rb.transform.parent;
+				rb.transform.SetParent(targetVec);
+				rb.transform.localPosition = new Vector3(1.2f, 0, 0);
+				rb.transform.localRotation = new Quaternion(-0.1f,0.1f,0.7f,0.7f);
+
+                StartCoroutine(setSkill1(d));
+				return;
+            }
 
 			//只有当我们被击倒时才允许地面攻击
 			if (enemyState == UNITSTATE.KNOCKDOWNGROUNDED && !d.isGroundAttack) return;
-
 			CancelInvoke();
 			StopAllCoroutines();
+
 			animator.StopAllCoroutines();
 			Move(Vector3.zero, 0f);
 
@@ -258,12 +295,12 @@ public class EnemyActions : MonoBehaviour {
 			}
 
 			//地面攻击
-			if(enemyState == UNITSTATE.KNOCKDOWNGROUNDED) {
-				StopAllCoroutines();
-				enemyState = UNITSTATE.GROUNDHIT;
-				StartCoroutine(GroundHit());
-				return;
-			}
+			//if(enemyState == UNITSTATE.KNOCKDOWNGROUNDED) {
+			//	StopAllCoroutines();
+			//	enemyState = UNITSTATE.GROUNDHIT;
+			//	StartCoroutine(GroundHit());
+			//	return;
+			//}
 
 			//转向即将进攻的方向
 			int dir = d.inflictor.transform.position.x > transform.position.x? 1 : -1;
@@ -271,7 +308,7 @@ public class EnemyActions : MonoBehaviour {
 
 			//检查是否有击倒
 			if (d.knockDown) {
-				StartCoroutine(KnockDownSequence(d.inflictor));
+				StartCoroutine(KnockDownSequence(d, standUpTime));
 				return;
 
 			} else {
@@ -283,13 +320,12 @@ public class EnemyActions : MonoBehaviour {
 
 				//再加一点冲击力
 				LookAtTarget(d.inflictor.transform);
-				animator.AddForce(-KnockbackForce);
+				animator.AddForce(-d.KnockbackForce);
 
 				//当敌人被攻击时，将敌人状态从被动状态转换为攻击状态  
 				if (enemyTactic != ENEMYTACTIC.ENGAGE) {
 					EnemyManager.setAgressive(gameObject);
 				}
-
 				Invoke("Ready", hitRecoveryTime);
 				return;
 			}
@@ -354,68 +390,66 @@ public class EnemyActions : MonoBehaviour {
 	#region KnockDown Sequence
 
 	//knockDown sequence
-	IEnumerator KnockDownSequence(GameObject inflictor) {
+	IEnumerator KnockDownSequence(DamageObject damage, float upTime) {
 		enemyState = UNITSTATE.KNOCKDOWN;
 		yield return new WaitForFixedUpdate();
 
 		//look towards the direction of the incoming attack
 		int dir = 1;
-		if(inflictor != null) dir = inflictor.transform.position.x > transform.position.x? 1 : -1;
+		if(damage.inflictor != null) dir = damage.inflictor.transform.position.x > transform.position.x? 1 : -1;
 		currentDirection = (DIRECTION)dir;
-		animator.SetDirection(currentDirection);
-		TurnToDir(currentDirection);
+        animator.SetDirection(currentDirection);
+        TurnToDir(currentDirection);
+        //add knockback force
+        animator.SetAnimatorTrigger("KnockDown_Up");
+        while (IsGrounded())
+        {
+            SetVelocity(new Vector3(damage.KnockbackForce * -dir, damage.KnockdownUpForce, 0));
+            yield return new WaitForFixedUpdate();
+        }
 
-		//add knockback force
-		animator.SetAnimatorTrigger("KnockDown_Up");
-		while(IsGrounded()){
-			SetVelocity(new Vector3(KnockbackForce * -dir, KnockdownUpForce, 0));
-			yield return new WaitForFixedUpdate();
-		}
+        //going up...
+        while (rb.velocity.y >= 0) yield return new WaitForFixedUpdate();
+        //going down
+        animator.SetAnimatorTrigger("KnockDown_Down");
+        while (!IsGrounded()) yield return new WaitForFixedUpdate();
+        //hit ground
+        animator.SetAnimatorTrigger("KnockDown_End");
+        GlobalAudioPlayer.PlaySFXAtPosition("Drop", transform.position);
+        animator.SetAnimatorFloat("MovementSpeed", 0f);
+        animator.ShowDustEffectLand();
+        enemyState = UNITSTATE.KNOCKDOWNGROUNDED;
+        Move(Vector3.zero, 0f);
+        //cam shake
+        CamShake camShake = Camera.main.GetComponent<CamShake>();
+        if (camShake != null) camShake.Shake(.3f);
 
-		//going up...
-		while(rb.velocity.y >= 0) yield return new WaitForFixedUpdate();
+        //dust effect
+        animator.ShowDustEffectLand();
 
-		//going down
-		animator.SetAnimatorTrigger ("KnockDown_Down");
-		while(!IsGrounded()) yield return new WaitForFixedUpdate();
+        //stop sliding
+        float t = 0;
+        float speed = 2;
+        Vector3 fromVelocity = rb.velocity;
+        while (t < 1)
+        {
+            SetVelocity(Vector3.Lerp(new Vector3(fromVelocity.x, rb.velocity.y + Physics.gravity.y * Time.fixedDeltaTime, fromVelocity.z), new Vector3(0, rb.velocity.y, 0), t));
+            t += Time.deltaTime * speed;
+            yield return new WaitForFixedUpdate();
+        }
 
-		//hit ground
-		animator.SetAnimatorTrigger ("KnockDown_End");
-		GlobalAudioPlayer.PlaySFXAtPosition("Drop", transform.position);
-		animator.SetAnimatorFloat ("MovementSpeed", 0f);
-		animator.ShowDustEffectLand();
-		enemyState = UNITSTATE.KNOCKDOWNGROUNDED;
-		Move(Vector3.zero, 0f);
+        //knockDown Timeout
+        Move(Vector3.zero, 0f);
+        yield return new WaitForSeconds(KnockdownTimeout);
 
-		//cam shake
-		CamShake camShake = Camera.main.GetComponent<CamShake>();
-		if (camShake != null) camShake.Shake(.3f);
+        //stand up
+        enemyState = UNITSTATE.STANDUP;
+        animator.SetAnimatorTrigger("StandUp");
+        Invoke("Ready", standUpTime);
+    }
 
-		//dust effect
-		animator.ShowDustEffectLand();
-
-		//stop sliding
-		float t = 0;
-		float speed = 2;
-		Vector3 fromVelocity = rb.velocity;
-		while (t<1){
-			SetVelocity(Vector3.Lerp (new Vector3(fromVelocity.x, rb.velocity.y + Physics.gravity.y * Time.fixedDeltaTime, fromVelocity.z), new Vector3(0, rb.velocity.y, 0), t));
-			t += Time.deltaTime * speed;
-			yield return new WaitForFixedUpdate();
-		}
-
-		//knockDown Timeout
-		Move(Vector3.zero, 0f);
-		yield return new WaitForSeconds(KnockdownTimeout);
-
-		//stand up
-		enemyState = UNITSTATE.STANDUP;
-		animator.SetAnimatorTrigger ("StandUp");
-		Invoke("Ready", standUpTime);
-	}
-
-	//ground hit
-	public IEnumerator GroundHit(){
+    //ground hit
+    public IEnumerator GroundHit(){
 		CancelInvoke();
 		GlobalAudioPlayer.PlaySFXAtPosition ("EnemyGroundPunchHit", transform.position);
 		animator.SetAnimatorTrigger ("GroundHit");
@@ -562,8 +596,8 @@ public class EnemyActions : MonoBehaviour {
 		walkBackwardSpeed *= Random.Range(.8f, 1.2f);
 		attackInterval *= Random.Range(.7f, 1.5f);
 		KnockdownTimeout *= Random.Range(.7f, 1.5f);
-		KnockdownUpForce *= Random.Range(.8f, 1.2f);
-		KnockbackForce *= Random.Range(.7f, 1.5f);
+		//KnockdownUpForce *= Random.Range(.8f, 1.2f);
+		//KnockbackForce *= Random.Range(.7f, 1.5f);
 	}
 
 	//destroy event

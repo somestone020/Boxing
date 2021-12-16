@@ -11,4 +11,9 @@ public class TimeToLive : MonoBehaviour {
 	void DestroyGO(){
 		Destroy(gameObject);
 	}
+
+	void Update() 
+	{
+		
+	}
 }
