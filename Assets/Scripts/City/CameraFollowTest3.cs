@@ -21,9 +21,6 @@ public class CameraFollowTest3 : MonoBehaviour {
     public Text text;
     private Vector2[] oldPositionDouble = new Vector2[3];
     private List<int> testIndex = new List<int>();
-    //private int[] tempPosition = new int[2];
-    //private List<int> touchArray = new List<int>();
-    //private Vector2 oldPositionSingle;
     private TouchState touchState = TouchState.NULL;
 
     private enum TouchState
@@ -138,7 +135,6 @@ public class CameraFollowTest3 : MonoBehaviour {
 
         }
         oldPositionDouble[touch.fingerId] = touch.position;
-        text.text = "坐标 tID:" + touchId + " fID: " + touch.fingerId + "  Length: " + Input.touches.Length + " index:" + index + "  State:" + touchState;
     }
 
 
@@ -158,7 +154,6 @@ public class CameraFollowTest3 : MonoBehaviour {
         valueMouse = Mathf.Clamp(valueMouse, 3, 16);
         offsetPos = offsetPos.normalized * valueMouse;
 
-        text.text = "坐标 aa:" + tempPosition1 + " bb: " + tempPosition2 + " cc: " + oldPositionDouble[0] + "  dd :" + oldPositionDouble[1];
 
         oldPositionDouble[touch1.fingerId] = tempPosition1;
         oldPositionDouble[touch2.fingerId] = tempPosition2;
@@ -185,7 +180,6 @@ public class CameraFollowTest3 : MonoBehaviour {
 
         offsetPos = transform.position - player.position;
         oldPositionDouble[testTouch.fingerId] = testPos;
-        text.text = "坐标 Test:" + testPos + "  old: " + oldPos + "  Index:" + index;
     }
 
     private void RemoveEndedTouch()

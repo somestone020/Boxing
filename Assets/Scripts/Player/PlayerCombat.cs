@@ -227,88 +227,26 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 			//大招
 			if (action == "SuperSkill" && buttonState == BUTTONSTATE.PRESS && isGrounded)
 			{
-				HealthSystem healthSystem = GetComponent<HealthSystem>();
-				if (healthSystem != null && healthSystem.CheckSkillValue(superSkillData.consumeMp))
-				{
-					healthSystem.SubstractSkillValue(superSkillData.consumeMp, mpRecoverTime);
-					playerState.SetState(UNITSTATE.SUPERSKILL);
-					TurnToDir(currentDirection);
-					lastAttack = superSkillData;
-					lastAttack.inflictor = gameObject;
-					lastAttackTime = Time.time;
-					lastAttackInput = "SuperSkill";
-					lastAttackDirection = currentDirection;
-					animator.SetAnimatorTrigger("SuperSkill");
-					return;
-				}
+				DoSkill(superSkillData, UNITSTATE.SKILL1, action);
+				return;
 
 			}
 			//招式1
 			if (action == "Skill1" && buttonState == BUTTONSTATE.PRESS && playerState.currentState == UNITSTATE.IDLE && isGrounded)
 			{
-
-				HealthSystem healthSystem = GetComponent<HealthSystem>();
-				if (healthSystem != null && healthSystem.CheckSkillValue(skill1Data.consumeMp))
-				{
-					playerState.SetState(UNITSTATE.SKILL1);
-					healthSystem.SubstractSkillValue(skill1Data.consumeMp, mpRecoverTime);
-					TurnToDir(currentDirection);
-					StartCoroutine(setRunSkill1(2f, 0.2f));
-					lastAttack = skill1Data;
-					lastAttack.inflictor = gameObject;
-					lastAttackTime = Time.time;
-					lastAttackInput = "Skill1";
-					lastAttackDirection = currentDirection;
-					animator.SetAnimatorBool("SkillEnd", false);
-					animator.SetAnimatorTrigger("Skill1");
-					Invoke("Ready", 3.8f);
-					return;
-				}
-
-
+				DoSkill(skill1Data,UNITSTATE.SKILL1,action);
+				return;
 			}
 			//招式2
 			if (action == "Skill2" && buttonState == BUTTONSTATE.PRESS && playerState.currentState == UNITSTATE.IDLE && isGrounded)
 			{
-				HealthSystem healthSystem = GetComponent<HealthSystem>();
-				if (healthSystem != null && healthSystem.CheckSkillValue(skill2Data.consumeMp))
-				{
-					playerState.SetState(UNITSTATE.SKILL2);
-					healthSystem.SubstractSkillValue(skill2Data.consumeMp, mpRecoverTime);
-					TurnToDir(currentDirection);
-					lastAttack = skill2Data;
-					lastAttack.inflictor = gameObject;
-					lastAttackTime = Time.time;
-					lastAttackInput = "Skill2";
-					lastAttackDirection = currentDirection;
-					animator.SetAnimatorTrigger("Skill2");
-					Invoke("Ready", 1);
-					return;
-				}
-
-
+				DoSkill(skill2Data, UNITSTATE.SKILL2, action);
 				return;
 			}
 			//招式3
 			if (action == "Skill3" && buttonState == BUTTONSTATE.PRESS && playerState.currentState == UNITSTATE.IDLE && isGrounded)
 			{
-				HealthSystem healthSystem = GetComponent<HealthSystem>();
-				if (healthSystem != null && healthSystem.CheckSkillValue(skill3Data.consumeMp))
-				{
-					healthSystem.SubstractSkillValue(skill3Data.consumeMp, mpRecoverTime);
-					playerState.SetState(UNITSTATE.SKILL3);
-					lastAttack = skill3Data;
-					lastAttack.inflictor = gameObject;
-					lastAttackTime = Time.time;
-					lastAttackInput = "Skill3";
-					lastAttackDirection = currentDirection;
-
-					StartCoroutine(showSkill1Effect());
-					animator.SetAnimatorTrigger("Skill3");
-					Invoke("Ready", 1);
-					return;
-				}
-
+				DoSkill(skill3Data, UNITSTATE.SKILL3, action);
 				return;
 			}
 
@@ -447,6 +385,32 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 		Invoke("Ready", damageObject.duration);
 	}
 
+	private void DoSkill(DamageObject damageObject, UNITSTATE state, string inputAction)
+    {
+		HealthSystem healthSystem = GetComponent<HealthSystem>();
+		if (healthSystem != null && healthSystem.CheckSkillValue(damageObject.consumeMp))
+		{
+			playerState.SetState(state);
+			healthSystem.SubstractSkillValue(damageObject.consumeMp, mpRecoverTime);
+			TurnToDir(currentDirection);
+			if(inputAction == "Skill1") StartCoroutine(setRunSkill1(2f, 0.2f));
+			else if (inputAction == "Skill3") StartCoroutine(showSkill1Effect());
+			else if (inputAction == "Skill2")
+            {
+				GameObject obj = GameObject.Instantiate(Resources.Load("fire-fx/fire-flaming-explosion"), rb.transform.parent) as GameObject;
+				obj.transform.position = new Vector3(rb.transform.position.x + ((int)currentDirection * 1.8f), 0.2f, rb.transform.position.z);
+			}
+			lastAttack = damageObject;
+			lastAttack.inflictor = gameObject;
+			lastAttackTime = Time.time;
+			lastAttackInput = inputAction;
+			lastAttackDirection = currentDirection;
+			animator.SetAnimatorTrigger(inputAction);
+			Invoke("Ready", 1.1f);
+		}
+	}
+
+
 	//使用现有装备的武器
 	void useCurrentWeapon() {
 		playerState.SetState(UNITSTATE.USEWEAPON);
@@ -492,7 +456,6 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 				rb.MovePosition(lerp);
 				yield return new WaitForSeconds(0);
 			}
-			//playerState.currentState = UNITSTATE.IDLE;
 		}
 
 	}
@@ -607,6 +570,34 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 		if (lastAttackInput == "WeaponAttack" && targetHit) currentWeapon.onHitSomething();
 	}
 
+	public void CheckForCapture() 
+	{
+		//在角色前面绘制一个命中框，以查看它与哪些对象发生碰撞
+		Vector3 boxPosition = transform.position + (Vector3.up * lastAttack.collHeight) + Vector3.right * ((int)lastAttackDirection * lastAttack.collDistance);
+		Vector3 boxSize = new Vector3(lastAttack.CollSize / 2, lastAttack.CollSize / 2, hitZRange / 2);
+		Collider[] hitColliders = Physics.OverlapBox(boxPosition, boxSize, Quaternion.identity, HitLayerMask);
+
+		int i = 0;
+		while (i < hitColliders.Length)
+		{
+
+			//击中一个可损坏的物体
+			IDamagable<DamageObject> damagableObject = hitColliders[i].GetComponent(typeof(IDamagable<DamageObject>)) as IDamagable<DamageObject>;
+			if (damagableObject != null)
+			{
+				damagableObject.Capture(lastAttack);
+
+				//我们撞到什么东西了
+				targetHit = true;
+			}
+			i++;
+		}
+
+		//没有击中任何东西
+		if (hitColliders.Length == 0) targetHit = false;
+
+	}
+
 	//在Unity编辑器中显示命中框（调试）
 #if UNITY_EDITOR
 	void OnDrawGizmos(){
@@ -695,6 +686,11 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 		}
 	}
 
+	public void Capture(DamageObject DO)
+	{
+
+	}
+
 	//update the hit counter
 	void UpdateHitCounter() {
 		if (Time.time - LastHitTime < hitKnockDownResetTime) { 
@@ -775,8 +771,6 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 		yield return new WaitForFixedUpdate();
 
 		//look towards the direction of the incoming attack
-		Debug.Log(11);
-		Debug.Log(damage.inflictor);
 		int dir = damage.inflictor.transform.position.x > transform.position.x ? 1 : -1;
 		currentDirection = (DIRECTION)dir;
 		TurnToDir(currentDirection);
@@ -951,4 +945,6 @@ public class PlayerCombat : MonoBehaviour, IDamagable<DamageObject> {
 			UI.ShowMenu("GameOver");
 		}
 	}
+
+   
 }

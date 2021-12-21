@@ -23,7 +23,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/04_TrainingRoom.unity
     guid: 5de5d1375dd2f2f429938096cabb81a3
-  - enabled: 1
-    path: Assets/ATest/CityScene.unity
-    guid: 1cd82df167d3d4948963da8164723260
+  - enabled: 0
+    path: 
+    guid: 00000000000000000000000000000000
   m_configObjects: {}

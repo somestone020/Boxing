@@ -70,6 +70,7 @@ public class EnemyActions : MonoBehaviour {
 	public float distance;
 	private Vector3 fixedVelocity;
 	private bool updateVelocity;
+	private Transform oldEnemyParent;
 
 	//list of states where the enemy cannot move
 	private List<UNITSTATE> NoMovementStates = new List<UNITSTATE> {
@@ -208,9 +209,9 @@ public class EnemyActions : MonoBehaviour {
 
         yield return new WaitForSeconds(0.1f);
         animator.animator.speed = 0;
-        yield return new WaitForSeconds(2.8f);
+        yield return new WaitForSeconds(0.3f);
         animator.animator.speed = 1;
-        yield return new WaitForSeconds(0.2f);
+        yield return new WaitForSeconds(0);
         rb.transform.SetParent(oldEnemyParent);
 		rb.useGravity = true;
         rb.transform.position = new Vector3(rb.transform.position.x, 0, rb.transform.position.z);
@@ -218,31 +219,10 @@ public class EnemyActions : MonoBehaviour {
 
     }
 
-    Transform oldEnemyParent;
+
 	//单位被击中
 	public void Hit(DamageObject d){
 		if(HitableStates.Contains(enemyState)) {
-			
-
-			if (d.animTrigger == "Skill1")
-            {
-				CancelInvoke();
-				StopAllCoroutines();
-				int rand = Random.Range(1, 3);
-				animator.SetAnimatorTrigger("Hit1");
-				enemyState = UNITSTATE.HIT;
-                SetVelocity(Vector3.zero);
-
-                rb.useGravity = false;
-				Transform targetVec = target.GetComponent<PlayerCombat>().attackBone;
-				oldEnemyParent = rb.transform.parent;
-				rb.transform.SetParent(targetVec);
-				rb.transform.localPosition = new Vector3(1.2f, 0, 0);
-				rb.transform.localRotation = new Quaternion(-0.1f,0.1f,0.7f,0.7f);
-
-                StartCoroutine(setSkill1(d));
-				return;
-            }
 
 			//只有当我们被击倒时才允许地面攻击
 			if (enemyState == UNITSTATE.KNOCKDOWNGROUNDED && !d.isGroundAttack) return;
@@ -329,6 +309,28 @@ public class EnemyActions : MonoBehaviour {
 				Invoke("Ready", hitRecoveryTime);
 				return;
 			}
+		}
+	}
+
+	public void Capture(DamageObject d)
+    {
+		if (d.animTrigger == "Skill1")
+		{
+			CancelInvoke();
+			StopAllCoroutines();
+			animator.SetAnimatorTrigger("Hit1");
+			enemyState = UNITSTATE.HIT;
+			SetVelocity(Vector3.zero);
+
+			rb.useGravity = false;
+			Transform targetVec = target.GetComponent<PlayerCombat>().attackBone;
+			oldEnemyParent = rb.transform.parent;
+			rb.transform.SetParent(targetVec);
+			rb.transform.localPosition = new Vector3(1.2f, 0, 0);
+			rb.transform.localRotation = new Quaternion(-0.1f, 0.1f, 0.7f, 0.7f);
+
+			StartCoroutine(setSkill1(d));
+			return;
 		}
 	}
 

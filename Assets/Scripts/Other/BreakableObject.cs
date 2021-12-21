@@ -56,4 +56,9 @@ public class BreakableObject : MonoBehaviour, IDamagable<DamageObject> {
 			Destroy(gameObject);
 		}
 	}
+
+    public void Capture(DamageObject DO)
+    {
+
+    }
 }

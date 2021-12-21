@@ -40,4 +40,9 @@ public class TrainingDummy : MonoBehaviour, IDamagable<DamageObject>{
 			addForce = Vector3.zero;
 		}
 	}
+
+    public void Capture(DamageObject DO)
+    {
+        
+    }
 }

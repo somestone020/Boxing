@@ -1363,7 +1363,6 @@ MonoBehaviour:
   currentDirection: -1
   inputDirection: {x: 0, y: 0}
   jumpInProgress: 0
-  isSuperSkill: 0
 --- !u!114 &114894661200743772
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1378,6 +1377,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weaponBone: {fileID: 4218021547317652}
   attackBone: {fileID: 3313182132854560728}
+  playerState: {fileID: 0}
   hitZRange: 2.2
   PunchCombo:
   - animTrigger: Punch1
@@ -1656,8 +1656,8 @@ MonoBehaviour:
     isGroundAttack: 0
     animationClip: {fileID: 0}
     animationSpeed: 0
-    CollSize: 1.4
-    collDistance: 1.4
+    CollSize: 1.8
+    collDistance: 1.8
     collHeight: 0.6
     hitTime: 0
     consumeMp: 10

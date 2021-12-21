@@ -55,12 +55,32 @@ public class UnitAnimator : MonoBehaviour {
 			transform.parent.GetComponent<EnemyAI>().Ready();
 		}
 	}
-	public void Check4Hit5()
-	{ 
+
+	public void Check4Hit5() 
+	{
+
+	}
+	
+	public void Check4HitToCapture()
+	{
+		if (isplayer)
+		{
+			PlayerCombat playerCombat = transform.parent.GetComponent<PlayerCombat>();
+			if (playerCombat != null)
+			{
+				if (playerCombat.playerState.currentState == UNITSTATE.SKILL1 ) playerCombat.CheckForCapture();
+				else playerCombat.CheckForHit();
+			}
+			else
+			{
+				Debug.Log("no player combat component found on gameObject '" + transform.parent.name + "'.");
+			}
+
+		}
 	}
 		//检查是否有东西被击中
 	public void Check4Hit() {
-
+		
 		//check if the player has hit something
 		if (isplayer) {
 			PlayerCombat playerCombat = transform.parent.GetComponent<PlayerCombat> ();
@@ -85,19 +105,19 @@ public class UnitAnimator : MonoBehaviour {
 	public void SuspendAnimation()
     {
 		PlayerCombat playerCombat = transform.parent.GetComponent<PlayerCombat>();
-		if (playerCombat != null && playerCombat.targetHit && playerCombat.playerState.currentState == UNITSTATE.SKILL1) 
+		if (playerCombat != null && playerCombat.targetHit) 
 		{
-			StartCoroutine(setSuspendAnimation(2.8f));
-		}
-		
-	}
+            StartCoroutine(setSuspendAnimation(0.1f));
+        }
+
+    }
 
 	IEnumerator setSuspendAnimation(float speed) 
 	{
         animator.speed = 0;
         yield return new WaitForSeconds(speed);
         animator.speed = 1;
-    }
+	}
 
     //show hit effect
     public void ShowHitEffect() {

@@ -19,16 +19,12 @@ public class Skill1EffectEvent : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-
-    }
-
-    private void OnCollisionEnter(Collision collision)
-    {
-        EnemyAI enemyAI = collision.collider.GetComponent<EnemyAI>();
-        if(enemyAI != null && senderDamage != null)
+        EnemyAI enemyAI = other.GetComponent<EnemyAI>();
+        if (enemyAI != null && senderDamage != null)
         {
             enemyAI.Hit(senderDamage);
 
         }
     }
+
 }
