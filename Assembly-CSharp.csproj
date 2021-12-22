@@ -945,6 +945,9 @@
     <Compile Include="Assets\Scripts\Level\LevelInit.cs" />
     <Compile Include="Assets\Scripts\Level\TilingFloorTrigger.cs" />
     <Compile Include="Assets\Scripts\Network\LonginNet.cs" />
+    <Compile Include="Assets\Scripts\Network\NetClientManage.cs" />
+    <Compile Include="Assets\Scripts\Network\NetConnect.cs" />
+    <Compile Include="Assets\Scripts\Network\NetDataModel.cs" />
     <Compile Include="Assets\Scripts\Other\BreakableObject.cs" />
     <Compile Include="Assets\Scripts\Other\FlickerEffect.cs" />
     <Compile Include="Assets\Scripts\Other\HandPointer.cs" />
